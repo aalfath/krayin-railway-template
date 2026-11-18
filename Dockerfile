@@ -35,12 +35,12 @@ WORKDIR /var/www/html
 RUN set -eux; \
     rm -rf /var/www/html/*; \
     git clone --depth 1 --branch "${KRAYIN_VERSION}" https://github.com/krayin/laravel-crm.git .; \
-    test "$(git rev-parse HEAD)" = "${KRAYIN_COMMIT}"; \
+    test "$(git -c safe.directory='*' rev-parse HEAD)" = "${KRAYIN_COMMIT}"; \
     rm -rf .git; \
     composer install --no-dev --prefer-dist --optimize-autoloader --no-scripts; \
     rm -rf /root/.composer /root/.cache; \
     touch .env; \
-    composer dump-autoload --optimize --no-dev; \
+    php artisan package:discover --ansi; \
     # Upstream schedules the inbound-mail poll every 5 minutes, but the default
     # "sendgrid" receiver throws on it. Run it only when IMAP is configured.
     sed -i "s|Schedule::command('inbound-emails:process')->everyFiveMinutes();|Schedule::command('inbound-emails:process')->everyFiveMinutes()->when(fn () => config('mail-receiver.default') === 'webklex-imap');|" routes/console.php; \
