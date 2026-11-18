@@ -51,10 +51,10 @@ RUN set -eux; \
     rm -f /opt/krayin-storage/installed; \
     chown -R www-data:www-data storage bootstrap/cache
 
-COPY rootfs/ /
-RUN a2ensite krayin && chmod 755 /usr/local/bin/railway-entrypoint.sh && php -l /usr/local/bin/railway-install.php && sh -n /usr/local/bin/railway-entrypoint.sh
-
 ENV PORT=8080
+COPY rootfs/ /
+RUN a2ensite krayin && apache2ctl configtest && chmod 755 /usr/local/bin/railway-entrypoint.sh && php -l /usr/local/bin/railway-install.php && sh -n /usr/local/bin/railway-entrypoint.sh
+
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]
 CMD ["apache2-foreground"]
