@@ -34,6 +34,17 @@ export MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-crm@${RAILWAY_PUBLIC_DOMAIN:-loca
 export MAIL_FROM_NAME="${MAIL_FROM_NAME:-$APP_NAME}"
 export PORT="${PORT:-8080}"
 
+# ---- Apache: enforce one MPM and only our site ------------------------------
+# Files deleted in image layers (a2dismod/a2dissite symlinks) reappeared in
+# Railway's runtime filesystem, and Apache then refused to start with
+# "More than one MPM loaded". Re-assert the intended links at every start.
+for m in mpm_event mpm_worker; do rm -f /etc/apache2/mods-enabled/$m.load /etc/apache2/mods-enabled/$m.conf; done
+ln -sf ../mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load
+ln -sf ../mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf
+find /etc/apache2/sites-enabled -mindepth 1 ! -name krayin.conf -exec rm -f {} +
+ln -sf ../sites-available/krayin.conf /etc/apache2/sites-enabled/krayin.conf
+apache2ctl -t >/dev/null 2>&1 || { log "apache config test failed:"; apache2ctl -t; exit 1; }
+
 # ---- storage/ lives on the volume: seed an empty volume, never overwrite ----
 mkdir -p storage
 cp -an /opt/krayin-storage/. storage/ 2>/dev/null || true
