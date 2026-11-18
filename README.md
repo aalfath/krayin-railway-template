@@ -18,8 +18,8 @@ The Krayin service gets a public `*.up.railway.app` domain and a health check on
 | Variable | Default | Notes |
 |---|---|---|
 | `ADMIN_EMAIL` | *(you enter it)* | Login email of the first admin. The only prompt. |
-| `ADMIN_PASSWORD` | `${{secret(20)}}` | First admin's password, generated per deploy. Read it in the Krayin service's **Variables** tab. Used only on the first start. |
-| `APP_KEY` | `base64:${{secret(43)}}=` | Laravel's encryption key, generated per deploy. Never change it after deploy. |
+| `ADMIN_PASSWORD` | `${{secret(20,"…letters and digits…")}}` | First admin's password, generated per deploy. Read it in the Krayin service's **Variables** tab. Used only on the first start. |
+| `APP_KEY` | `base64:${{secret(43,"…letters and digits…")}}=` | Laravel's 32-byte encryption key, generated per deploy. Never change it after deploy. |
 | `APP_URL` | `https://${{RAILWAY_PUBLIC_DOMAIN}}` | Public URL used in links and uploads. Change it if you add a custom domain. |
 | `DB_*` | references to `${{MySQL.…}}` | Private-network connection to the bundled MySQL. |
 | `PORT` | `8080` | Port Apache listens on. |
