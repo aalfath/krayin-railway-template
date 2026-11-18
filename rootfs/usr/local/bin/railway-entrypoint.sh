@@ -41,18 +41,9 @@ mkdir -p storage/app/public storage/framework/cache/data storage/framework/sessi
          storage/framework/views storage/logs bootstrap/cache
 rm -rf storage/lost+found 2>/dev/null || true
 
-# ---- database: wait, then install once or migrate --------------------------
+# ---- database: wait, then (under a lock) install once or migrate ----------
 php /usr/local/bin/railway-install.php wait
-STATE="$(php /usr/local/bin/railway-install.php state)"
-log "database state: ${STATE}"
-if [ "${STATE}" = "installed" ]; then
-    php artisan migrate --force --no-interaction
-else
-    : "${ADMIN_EMAIL:?ADMIN_EMAIL is required for the first start (it becomes the admin login)}"
-    : "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required for the first start}"
-    php artisan migrate --force --no-interaction
-    php /usr/local/bin/railway-install.php install
-fi
+php /usr/local/bin/railway-install.php locked /usr/local/bin/railway-db.sh
 touch storage/installed
 
 # ---- caches (rebuilt each boot from the current variables) -----------------

@@ -53,7 +53,7 @@ RUN set -eux; \
 
 ENV PORT=8080
 COPY rootfs/ /
-RUN a2ensite krayin && apache2ctl configtest && chmod 755 /usr/local/bin/railway-entrypoint.sh && php -l /usr/local/bin/railway-install.php && sh -n /usr/local/bin/railway-entrypoint.sh
+RUN a2ensite krayin && apache2ctl configtest && chmod 755 /usr/local/bin/railway-entrypoint.sh /usr/local/bin/railway-db.sh && sh -n /usr/local/bin/railway-db.sh && php -l /usr/local/bin/railway-install.php && sh -n /usr/local/bin/railway-entrypoint.sh
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]

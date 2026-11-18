@@ -3,6 +3,7 @@
  * Boot-time helper for Krayin CRM on Railway.
  *
  *   wait     block until the database answers (up to ~3 minutes)
+ *   locked CMD...  run CMD while holding a MySQL advisory lock
  *   state    print "installed" or "empty"
  *   install  seed Krayin's base data and create the first admin from
  *            ADMIN_EMAIL / ADMIN_PASSWORD, in one transaction, so the
@@ -27,6 +28,24 @@ if ($mode === 'wait') {
         }
     }
     exit(1);
+}
+
+if ($mode === 'locked') {
+    // Hold a MySQL advisory lock while running the given command, so two
+    // deployments that start together (first deploy, overlapping redeploys)
+    // never migrate or install the same database at the same time.
+    $dsn = sprintf('mysql:host=%s;port=%s', getenv('DB_HOST'), getenv('DB_PORT') ?: '3306');
+    $pdo = new PDO($dsn, getenv('DB_USERNAME') ?: 'root', getenv('DB_PASSWORD') ?: '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $name = 'krayin-railway-boot-'.(getenv('DB_DATABASE') ?: 'railway');
+    fwrite(STDERR, "[railway] waiting for the boot lock\n");
+    if ((int) $pdo->query('SELECT GET_LOCK('.$pdo->quote($name).', 900)')->fetchColumn() !== 1) {
+        fwrite(STDERR, "[railway] ERROR: could not get the boot lock within 15 minutes\n");
+        exit(1);
+    }
+    $cmd = implode(' ', array_map('escapeshellarg', array_slice($argv, 2)));
+    passthru($cmd, $code);
+    $pdo->query('SELECT RELEASE_LOCK('.$pdo->quote($name).')');
+    exit($code);
 }
 
 require '/var/www/html/vendor/autoload.php';
@@ -97,5 +116,5 @@ if ($mode === 'install') {
     exit(0);
 }
 
-fwrite(STDERR, "usage: railway-install.php wait|state|install\n");
+fwrite(STDERR, "usage: railway-install.php wait|locked CMD...|state|install\n");
 exit(2);
